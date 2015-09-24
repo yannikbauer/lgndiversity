@@ -44,6 +44,10 @@ for unit = units;
     meanCounts = mean(counts); % averages per bin
     spikeRates = meanCounts*(1/binWidth); % spike rates (Hz)
     
+    % Normalize 
+    meanCounts = meanCounts/max(meanCounts);
+    spikeRates = spikeRates/max(spikeRates);
+    
     % fill in PSTHMatrix
     PSTHMatrix(unit,:) = meanCounts;
     PSTHMatrix = PSTHMatrix';
