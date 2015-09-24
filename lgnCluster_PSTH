@@ -1,0 +1,53 @@
+function PSTHMatrix = lgnCluster_PSTH()
+%% PSTHMatrix = lgnClusterPSTH()
+% Generates PSTHs for list of units that respond to chirp stimulus. The PSTH-output-matrix is the
+% intended input to the function "computeFeatures" for unit clustering.
+% TODO: use chirpUnits as input rather than calling function here
+
+clear all, close all,% clc;
+%% Setup - Run startup file (if not done yet); connect to server first
+startup_cin
+
+%% Load chirp unit data or fetch it directly
+% load('/Users/Yannik/Google Drive/SHARED Folders & Files/Academic/MATLAB gdrive/MATLAB HIWI/Miro scripts/units_for_chirp_sorted2.mat')
+chirpUnits = chirpUnitList();
+
+%% Parameters
+% Select units of interest
+units = [1:length(chirpUnits)];
+binWidth = 0.05; % bin width of PSTH, 0.05 = 50 ms
+
+%% Loop through units
+
+% initialize final PSTHMatrix
+PSTHMatrix = [];
+
+for unit = units;
+    % get all spike times in TrialSpikeExtra as cell array
+    spikeTimes = fetchn(data.TrialSpikesExtra(chirpUnits(unit)),...
+        'spike_times');
+    
+    % Convert data format
+    spikeTimes = cellfun(@transpose,spikeTimes,'un',0);
+    
+    %% PSTH    
+    % Compute maximum bin edge (alternatively, hardcode: edges = 0:0.05:32;)
+    % Retrieve timings of chirp stimulus for maximum time
+    chirpTime = plotChirpStim();
+    binMax = round(max(chirpTime));
+    edges = 0:binWidth:binMax;
+    
+    % Compute counts for every trial, averages over trials and spike rate (Hz)
+    for i = 1:numel(spikeTimes)
+        [counts(i,:)] = histcounts(spikeTimes{i},edges); % counts
+    end
+    meanCounts = mean(counts); % averages per bin
+    spikeRates = meanCounts*(1/binWidth); % spike rates (Hz)
+    
+    % fill in PSTHMatrix
+    PSTHMatrix(unit,:) = meanCounts;
+    PSTHMatrix = PSTHMatrix';
+    
+end % end of unit loop
+
+end % end of function
